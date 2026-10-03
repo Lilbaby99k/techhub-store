@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TechHub | Electronics & Gadgets</title>
+  <meta name="description" content="Smartphones, laptops, gaming gear and smart gadgets.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="topbar" id="topbar">Free delivery on qualifying orders</div>
+  <header class="header">
+    <div class="wrap header-row">
+      <button class="icon-btn menu-btn" data-action="menu" aria-label="Open menu">&#9776;</button>
+      <a href="#/" class="logo" id="logo">TechHub</a>
+      <form class="search" id="searchForm" role="search">
+        <input id="searchInput" type="search" placeholder="Search products, brands or SKU" aria-label="Search products" autocomplete="off">
+        <button type="submit">Search</button>
+      </form>
+      <nav class="actions" aria-label="Account">
+        <a href="#/account" id="accountLink">Sign in</a>
+        <a href="#/wishlist">Wishlist <span class="badge" id="wishCount">0</span></a>
+        <a href="#/cart">Cart <span class="badge" id="cartCount">0</span></a>
+      </nav>
+    </div>
+    <nav class="mainnav" id="mainnav" aria-label="Main">
+      <div class="wrap">
+        <a href="#/">Home</a>
+        <a href="#/shop">Shop</a>
+        <span class="dd"><a href="#/shop">Categories</a><div class="dd-menu" id="catMenu"></div></span>
+        <a href="#/shop?f=deals" class="hot">Deals</a>
+        <a href="#/shop?f=new">New Arrivals</a>
+        <a href="#/shop?f=best">Best Sellers</a>
+        <a href="#/contact">Contact</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="app" class="wrap" tabindex="-1"></main>
+
+  <footer class="footer"><div class="wrap" id="footer"></div></footer>
+  <div id="toasts" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
+  <script src="policy.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
