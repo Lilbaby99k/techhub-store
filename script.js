@@ -51,7 +51,7 @@ function card(p) {
       <span class="brand">${esc(p.brands?.name || '')}</span>
       <a class="name" href="#/product/${esc(p.slug)}">${esc(p.name)}</a>
       ${p.review_count ? `<div>${stars(p.rating_avg)}<small class="brand">(${p.review_count})</small></div>` : ''}
-      <div><span class="price">${money(priceOf(p))}</span>${p.discount_price ? `<span class="old">${money(p.price)}</span>` : ''}</div>
+      <div class="prow"><span class="price">${money(priceOf(p))}</span>${p.discount_price ? `<span class="old">${money(p.price)}</span>` : ''}</div>
     </div>
     <div class="foot"><button class="btn pri sm" data-action="add" data-id="${p.id}" ${out ? 'disabled' : ''}>${out ? 'Out of Stock' : 'Add to Cart'}</button></div>
   </article>`;
@@ -125,6 +125,7 @@ async function render() {
   const token = ++lastRender;
   const [, name, arg] = path.split('/');
   const handler = routes[name || 'home'] || routes.notfound;
+  if (state.needs2fa && ['account', 'order', 'checkout', 'wishlist', 'confirmed', 'verify'].includes(name)) { sessionStorage.setItem('after', location.hash); return go('#/verify2fa'); }
   app.innerHTML = skeleton(4);
   window.scrollTo(0, 0);
   try {
@@ -177,7 +178,7 @@ routes.shop = async (_, p) => {
       <a class="btn ghost sm" style="width:100%;margin-top:8px" href="#/shop">Clear all</a>
     </form>
     <section>
-      <div class="toolbar"><strong>${count} product${count === 1 ? '' : 's'}</strong>
+      <div class="toolbar"><strong>${count} product${count === 1 ? '' : 's'}</strong><button type="button" class="btn ghost sm fbtn" data-action="filters" aria-controls="filters">Filters</button>
         <select id="sort" aria-label="Sort products">${sorts.map(([v, l]) => opt(v, l, p.sort || 'featured')).join('')}</select></div>
       ${data.length ? `<div class="grid">${data.map(card).join('')}</div>` : stateBox('No products found', 'Try a different search or clear some filters.', '<a class="btn" href="#/shop">Clear filters</a>')}
       ${pages > 1 ? `<div class="pager"><button class="btn ghost sm" data-page="${page - 1}" ${page <= 1 ? 'disabled' : ''}>Previous</button><span style="align-self:center">Page ${page} of ${pages}</span><button class="btn ghost sm" data-page="${page + 1}" ${page >= pages ? 'disabled' : ''}>Next</button></div>` : ''}
@@ -203,7 +204,7 @@ routes.product = async (slug) => {
       <div class="thumbs">${imgs.map((i, n) => `<button class="${n ? '' : 'on'}" data-thumb="${esc(i.url)}" aria-label="Image ${n + 1}"><img src="${esc(i.url)}" alt=""></button>`).join('')}</div></div>
     <div><span class="brand">${esc(p.brands?.name || '')} · ${esc(p.categories?.name || '')}</span><h1>${esc(p.name)}</h1>
       <div style="margin:8px 0">${p.review_count ? `${stars(p.rating_avg)} <small class="brand">${p.rating_avg} (${p.review_count} reviews)</small>` : '<small class="brand">No reviews yet</small>'}</div>
-      <div><span class="price">${money(priceOf(p))}</span>${p.discount_price ? `<span class="old">${money(p.price)}</span> <span class="tag" style="position:static;display:inline-block">-${pct(p)}%</span>` : ''}</div>
+      <div class="prow"><span class="price">${money(priceOf(p))}</span>${p.discount_price ? `<span class="old">${money(p.price)}</span> <span class="tag" style="position:static;display:inline-block">-${pct(p)}%</span>` : ''}</div>
       <p style="margin:8px 0">${stockLabel(p)}</p>
       <div class="pd-actions">
         <div class="qty"><button data-q="-1" aria-label="Decrease">−</button><span id="pq">1</span><button data-q="1" aria-label="Increase">+</button></div>
@@ -324,6 +325,8 @@ routes.login = () => authForm('Sign in', [['email', 'Email', 'email', 'email'], 
 routes.register = () => authForm('Create account', [['full_name', 'Full name', 'text', 'name'], ['email', 'Email', 'email', 'email'], ['phone', 'Phone number', 'tel', 'tel'], ['password', 'Password (8+ characters, letters and numbers)', 'password', 'new-password'], ['confirm', 'Confirm password', 'password', 'new-password']], 'Create account',
   '<p style="margin-top:14px">Already registered? <a href="#/login"><u>Sign in</u></a></p>');
 routes.forgot = () => authForm('Reset your password', [['email', 'Email', 'email', 'email']], 'Send me a code');
+routes.verify2fa = () => state.user ? authForm('Two-step verification', [['code', '6-digit code from your authenticator app', 'text', 'one-time-code']], 'Verify',
+  '<p style="margin-top:14px"><a href="#/" data-action="logout"><u>Use a different account</u></a></p><p class="brand" style="margin-top:8px">Lost your phone? Contact us and we will help once we have confirmed it is you.</p>') : (go('#/login'), null);
 routes.resetcode = () => authForm('Enter your code', [['code', '6-digit code from your email', 'text', 'one-time-code'], ['password', 'New password (8+ characters, letters and numbers)', 'password', 'new-password'], ['confirm', 'Confirm new password', 'password', 'new-password']], 'Reset password',
   '<p style="margin-top:14px">No code yet? Check spam, or <a href="#/forgot"><u>send a new one</u></a>.</p>');
 routes.reset = () => authForm('Choose a new password', [['password', 'New password', 'password', 'new-password'], ['confirm', 'Confirm password', 'password', 'new-password']], 'Update password');
@@ -498,6 +501,7 @@ const ICONS = {
   clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
   pin: '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
   lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
   out: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
 };
 const ic = n => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
@@ -506,7 +510,7 @@ function accountShell(tab, title, inner, unread = 0) {
   const link = (k, href, icon, label, badge = '') => `<a class="${tab === k ? 'on' : ''}" href="${href}">${ic(icon)}<span>${label}</span>${badge}</a>`;
   return `<div class="acct"><nav class="acct-nav" aria-label="Account">
     ${link('overview', '#/account', 'user', 'My account')}${link('orders', '#/account/orders', 'box', 'Orders')}${link('inbox', '#/account/inbox', 'mail', 'Inbox', unread ? `<em class="nbadge">${unread}</em>` : '')}${link('reviews', '#/account/reviews', 'star', 'Pending reviews')}${link('wishlist', '#/wishlist', 'heart', 'Wishlist')}${link('viewed', '#/account/viewed', 'clock', 'Recently viewed')}<hr>
-    ${link('addresses', '#/account/addresses', 'pin', 'Address book')}${link('profile', '#/account/profile', 'lock', 'Profile &amp; security')}<hr>
+    ${link('addresses', '#/account/addresses', 'pin', 'Address book')}${link('profile', '#/account/profile', 'lock', 'Profile &amp; security')}${link('2fa', '#/account/2fa', 'shield', 'Two-step verification')}<hr>
     <a href="#/" data-action="logout">${ic('out')}<span>Logout</span></a></nav>
     <section class="acct-main panel"><h1 class="acct-title">${title}</h1>${inner}</section></div>`;
 }
@@ -531,16 +535,18 @@ async function pendingReviews() {
 
 async function accOverview() {
   const pr = state.profile || {};
-  const [{ data: addr }, { data: last }, pend] = await Promise.all([
+  const [{ data: addr }, { data: last }, pend, { data: mf }] = await Promise.all([
     db.from('addresses').select('*').order('is_default', { ascending: false }).limit(1),
     db.from('orders').select(ORDER_SELECT).order('created_at', { ascending: false }).limit(1),
     pendingReviews(),
+    db.auth.mfa.listFactors(),
   ]);
-  const a = addr?.[0], o = last?.[0];
+  const a = addr?.[0], o = last?.[0], twoOn = (mf?.totp || []).length > 0;
   return ['Account overview', `<div class="cards2">
     <div class="cardbox"><h3>Account details</h3><div class="cb"><b>${esc(pr.full_name || '')}</b><br><span class="brand">${esc(state.user.email)}</span>${pr.phone ? `<br><span class="brand">${esc(pr.phone)}</span>` : ''}<p><a href="#/account/profile"><u>Edit details</u></a></p></div></div>
     <div class="cardbox"><h3>Address book</h3><div class="cb">${a ? `Your default shipping address:<br><b>${esc(a.recipient)}</b><br>${esc(a.address_line)}, ${esc(a.city)}, ${esc(a.state)}` : '<span class="brand">No saved address yet.</span>'}<p><a href="#/account/addresses"><u>${a ? 'Manage addresses' : 'Add an address'}</u></a></p></div></div>
     <div class="cardbox"><h3>Latest order</h3><div class="cb">${o ? `<b>${esc(o.order_number)}</b> <span class="bdg ${STATUS_INFO[o.status].badge}">${STATUS_INFO[o.status].label}</span><p class="brand" style="margin:6px 0">${deliveryLine(o).text}</p><a href="#/order/${o.id}"><u>Track order</u></a> · <a href="#/account/orders"><u>All orders</u></a>` : '<span class="brand">You have not placed an order yet.</span><p><a href="#/shop"><u>Start shopping</u></a></p>'}</div></div>
+    <div class="cardbox"><h3>Account security</h3><div class="cb">Two-step verification: <span class="bdg ${twoOn ? 'b-ok' : 'b-wait'}">${twoOn ? 'On' : 'Off'}</span><p class="brand" style="margin:6px 0">${twoOn ? 'Your account asks for a code at every sign-in.' : 'Add a second lock so a stolen password is not enough.'}</p><a href="#/account/2fa"><u>${twoOn ? 'Manage' : 'Turn on'}</u></a></div></div>
     <div class="cardbox"><h3>Pending reviews</h3><div class="cb">${pend.length ? `<b>${pend.length}</b> item${pend.length > 1 ? 's' : ''} waiting for your review.<p><a href="#/account/reviews"><u>Review now</u></a></p>` : '<span class="brand">You are all caught up.</span>'}</div></div></div>`];
 }
 
@@ -594,6 +600,16 @@ async function accAddresses(p) {
   return ['Address book', (showForm ? form : '<p style="margin-bottom:14px"><a class="btn pri" href="#/account/addresses?new=1">Add a new address</a></p>') + (list || (showForm ? '' : stateBox('No saved addresses', 'Save an address to check out faster.')))];
 }
 
+async function acc2fa() {
+  const { data: f } = await db.auth.mfa.listFactors(), on = (f?.totp || []).length > 0;
+  return ['Two-step verification', `<div style="max-width:520px">
+    <p>Add a second lock to your account. Even if someone learns your password, they cannot sign in without a 6-digit code from an app on your phone.</p>
+    <p style="margin:12px 0"><span class="bdg ${on ? 'b-ok' : 'b-wait'}">${on ? 'On' : 'Off'}</span></p>
+    ${on ? '<p class="brand" style="margin-bottom:10px">You will be asked for a code each time you sign in.</p><button class="btn ghost sm" data-action="mfa-off">Turn off</button>' : '<button class="btn pri" data-action="mfa-start">Set up two-step verification</button>'}
+    <div id="mfaBox"></div>
+    <p class="brand" style="margin-top:18px">Use an authenticator app such as Google Authenticator, Microsoft Authenticator or Authy. Keep your phone safe. If you lose it, contact us and we will help once we have confirmed it is you.</p></div>`];
+}
+
 async function accProfile() {
   const pr = state.profile || {}, mail = state.settings.store_email;
   const del = mail ? `mailto:${esc(mail)}?subject=${encodeURIComponent('Account deletion request')}&body=${encodeURIComponent('Please delete my account.\nAccount email: ' + state.user.email)}` : '#/contact';
@@ -601,7 +617,7 @@ async function accProfile() {
     <h2>Your details</h2><div id="profMsg"></div>
     <form id="profileForm"><div class="field"><label for="pn">Full name</label><input id="pn" name="full_name" value="${esc(pr.full_name)}" required></div>
       <div class="field"><label for="pp">Phone</label><input id="pp" name="phone" value="${esc(pr.phone)}"></div>
-      <div class="field"><label>Email</label><input value="${esc(state.user.email)}" disabled></div><button class="btn pri sm">Save changes</button></form>
+      <div class="field"><label for="pe">Email</label><input id="pe" value="${esc(state.user.email)}" disabled></div><button class="btn pri sm">Save changes</button></form>
 
     <h2 style="margin-top:28px">Change password</h2><div id="pwMsg"></div>
     <form id="pwForm" novalidate>
@@ -621,7 +637,7 @@ async function accProfile() {
 routes.account = async (arg, p) => {
   if (!state.user) { sessionStorage.setItem('after', '#/account'); return go('#/login'), null; }
   const tab = arg || 'overview';
-  const views = { overview: accOverview, orders: accOrders, inbox: accInbox, reviews: accReviews, viewed: accViewed, addresses: accAddresses, profile: accProfile };
+  const views = { overview: accOverview, orders: accOrders, inbox: accInbox, reviews: accReviews, viewed: accViewed, addresses: accAddresses, profile: accProfile, '2fa': acc2fa };
   if (!views[tab]) return routes.notfound();
   const unread = await unreadCount();
   const [title, html] = await views[tab](p);
@@ -670,7 +686,7 @@ routes.order = async (id) => {
   document.title = `Order ${o.order_number} | ${state.settings.store_name || 'TechHub'}`;
 
   const reached = {};
-  [...(o.order_status_history || [])].sort((a, b) => a.created_at.localeCompare(b.created_at)).forEach(h => { reached[h.status] ??= h.created_at; });
+  [...(o.order_status_history || [])].sort((a, b) => a.created_at.localeCompare(b.created_at)).forEach(h => { if (!reached[h.status]) reached[h.status] = h.created_at; });
   const cancelled = o.status === 'cancelled', idx = TRACK.indexOf(o.status), e = etaFor(o), dl = deliveryLine(o);
   const steps = TRACK.map((s, n) => {
     const done = cancelled ? !!reached[s] : n <= idx, now = !cancelled && n === idx;
@@ -759,9 +775,20 @@ async function authSubmit(name, v) {
   const btn = $('#authForm button'); btn.disabled = true;
   try {
     if (name === 'login') {
-      const { error } = await db.auth.signInWithPassword({ email: v.email.trim(), password: v.password });
+      const { data: si, error } = await db.auth.signInWithPassword({ email: v.email.trim(), password: v.password });
       if (error) throw error;
-      const after = sessionStorage.getItem('after') || '#/account'; sessionStorage.removeItem('after'); go(after);
+      await onSession(si.user);
+      const after = sessionStorage.getItem('after') || '#/account';
+      if (state.needs2fa) { sessionStorage.setItem('after', after); go('#/verify2fa'); } else { sessionStorage.removeItem('after'); go(after); }
+    } else if (name === 'verify2fa') {
+      if (!/^\d{6}$/.test(v.code.trim())) throw new Error('Enter the 6-digit code from your authenticator app.');
+      const { data: f } = await db.auth.mfa.listFactors(); const factor = f?.totp?.[0];
+      if (!factor) throw new Error('No authenticator is set up for this account.');
+      const ch = await db.auth.mfa.challenge({ factorId: factor.id }); if (ch.error) throw ch.error;
+      const vr = await db.auth.mfa.verify({ factorId: factor.id, challengeId: ch.data.id, code: v.code.trim() });
+      if (vr.error) throw new Error('That code is not correct. Try again.');
+      await onSession(state.user);
+      const after = sessionStorage.getItem('after') || '#/account'; sessionStorage.removeItem('after'); go(after); return;
     } else if (name === 'register') {
       if (v.full_name.trim().length < 2) throw new Error('Enter your full name.');
       if (!validEmail(v.email)) throw new Error('Enter a valid email address.');
@@ -784,9 +811,10 @@ async function authSubmit(name, v) {
       if (v.password !== v.confirm) throw new Error('Passwords do not match.');
       await callResetFn({ action: 'confirm', email, code: v.code.trim(), password: v.password });
       sessionStorage.removeItem('resetEmail');
-      const { error } = await db.auth.signInWithPassword({ email, password: v.password });
+      const { data: si, error } = await db.auth.signInWithPassword({ email, password: v.password });
       if (error) { toast('Password updated. Please sign in.'); return go('#/login'); }
-      toast('Password updated. Welcome back!'); go('#/account'); return;
+      await onSession(si.user);
+      toast('Password updated. Welcome back!'); go(state.needs2fa ? '#/verify2fa' : '#/account'); return;
     } else if (name === 'reset') {
       if (!validPw(v.password)) throw new Error('Password needs 8+ characters with letters and numbers.');
       if (v.password !== v.confirm) throw new Error('Passwords do not match.');
@@ -835,12 +863,40 @@ document.addEventListener('click', async e => {
   const el = e.target.closest('[data-action]'); if (!el) return;
   const { action, id } = el.dataset;
   const qty = el.hasAttribute('data-pq') ? +$('#pq')?.textContent || 1 : 1;
+  if (action === 'filters') { $('#filters').classList.toggle('open'); }
   if (action === 'menu') $('#mainnav').classList.toggle('open');
   if (action === 'retry') render();
   if (action === 'add') { cartAdd(id, qty); toast('Added to cart'); }
   if (action === 'buy') { cartAdd(id, qty); go('#/checkout'); }
   if (action === 'remove') { state.cart = state.cart.filter(i => i.id !== id); saveCart(); render(); }
   if (action === 'qty') { const l = state.cart.find(i => i.id === id); l.qty = Math.max(1, l.qty + +el.dataset.d); saveCart(); render(); }
+  if (action === 'mfa-start') {
+    el.disabled = true;
+    const { data: f } = await db.auth.mfa.listFactors();
+    for (const x of (f?.all || []).filter(x => x.status === 'unverified')) await db.auth.mfa.unenroll({ factorId: x.id }); // clear abandoned attempts
+    // The app shows the store name and the account email, instead of the website address.
+    const { data, error } = await db.auth.mfa.enroll({ factorType: 'totp', issuer: state.settings.store_name || 'Store', friendlyName: state.user.email || 'Authenticator' });
+    if (error) { el.disabled = false; return toast(error.message, true); }
+    $('#mfaBox').innerHTML = `<div class="panel" style="margin-top:14px"><h2>Scan this code</h2>
+      <ol style="padding-left:18px;margin:8px 0"><li>Open your authenticator app and add an account.</li><li>Scan the code below, or type the key by hand.</li><li>Enter the 6-digit code the app shows.</li></ol>
+      <div style="text-align:center"><img id="mfaQr" alt="QR code to scan" width="180" height="180"></div>
+      <p style="word-break:break-all;text-align:center"><small>Key: <b>${esc(data.totp.secret)}</b></small></p><div id="mfaMsg"></div>
+      <form id="mfaForm" novalidate><div class="field"><label for="mfaCode">6-digit code</label><input id="mfaCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required></div><button class="btn pri sm">Turn on</button></form></div>`;
+    $('#mfaQr').src = data.totp.qr_code; // set as a property: the code contains quotes that would break the page if pasted into HTML
+    $('#mfaForm').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const ch = await db.auth.mfa.challenge({ factorId: data.id }); if (ch.error) return showMsg('#mfaMsg', ch.error.message);
+      const vr = await db.auth.mfa.verify({ factorId: data.id, challengeId: ch.data.id, code: $('#mfaCode').value.trim() });
+      if (vr.error) return showMsg('#mfaMsg', 'That code is not correct. Try again.');
+      toast('Two-step verification is on'); render();
+    });
+  }
+  if (action === 'mfa-off') {
+    if (!confirm('Turn off two-step verification? Your account will be protected by your password only.')) return;
+    const { data: f } = await db.auth.mfa.listFactors();
+    const { error } = await db.auth.mfa.unenroll({ factorId: f.totp[0].id });
+    error ? toast(error.message, true) : (toast('Two-step verification is off'), render());
+  }
   if (action === 'logout-all') { await db.auth.signOut({ scope: 'global' }); await onSession(null); go('#/login'); toast('Signed out of all devices'); }
   if (action === 'addr-default') { await db.from('addresses').update({ is_default: false }).eq('user_id', state.user.id); await db.from('addresses').update({ is_default: true }).eq('id', id); render(); }
   if (action === 'addr-delete') { if (!confirm('Delete this address?')) return; const { error } = await db.from('addresses').delete().eq('id', id); error ? toast(error.message, true) : render(); }
@@ -849,6 +905,7 @@ document.addEventListener('click', async e => {
   if (action === 'logout') { await db.auth.signOut({ scope: 'local' }); await onSession(null); location.hash === '#/' ? render() : go('#/'); }
   if (action === 'resetpw') { try { await callResetFn({ action: 'request', email: state.user.email }); sessionStorage.setItem('resetEmail', state.user.email); go('#/resetcode'); } catch (err) { toast(err.message, true); } }
   if (action === 'wish') {
+    if (state.needs2fa) { sessionStorage.setItem('after', location.hash); return go('#/verify2fa'); }
     if (!state.user) { sessionStorage.setItem('after', location.hash); return go('#/login'); }
     const on = state.wish.has(id);
     const { data: w } = await db.from('wishlists').select('id').eq('user_id', state.user.id).single();
@@ -871,13 +928,16 @@ async function onSession(user) {
   state.user = user;
   $('#accountLink').textContent = user ? 'My account' : 'Sign in';
   state.profile = null;
-  if (user) {
+  // Password accepted, but this customer turned on two-step verification and has not entered the code yet.
+  state.needs2fa = false;
+  if (user) { const { data: aal } = await db.auth.mfa.getAuthenticatorAssuranceLevel(); state.needs2fa = !!aal && aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2'; }
+  if (user && !state.needs2fa) {
     const { data } = await db.from('profiles').select('full_name,phone').eq('id', user.id).maybeSingle();
     state.profile = data;
   }
   await loadWishlist();
   if (state.channel) { db.removeChannel(state.channel); state.channel = null; }
-  if (user) {
+  if (user && !state.needs2fa) {
     // Customers see their own order updates live (RLS limits what is delivered).
     state.channel = db.channel('my-orders').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `user_id=eq.${user.id}` }, payload => {
       toast(`Order ${payload.new.order_number} is now ${payload.new.status}`);
