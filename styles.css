@@ -40,7 +40,7 @@ h1{font-size:1.9rem}h2{font-size:1.35rem;margin-bottom:14px}
 .hero-art{aspect-ratio:4/3;background:var(--or);border-radius:var(--r);display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:8px}
 .hero-art img{width:100%;height:100%;object-fit:cover;border-radius:4px;background:var(--wh)}
 
-.section{margin-bottom:36px}.sec-head{display:flex;justify-content:space-between;align-items:baseline}.sec-head a{color:var(--or-d);font-weight:600}
+.section{margin-bottom:36px}.sec-head{display:flex;justify-content:space-between;align-items:baseline}.sec-head a{color:#a84300;font-weight:600}
 .cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 .cat{background:var(--wh);border:1px solid var(--line);border-radius:var(--r);padding:16px 10px;text-align:center;font-weight:600}
 .cat:hover{border-color:var(--or)}.cat img{height:64px;margin:0 auto 8px;object-fit:contain}
@@ -58,7 +58,7 @@ h1{font-size:1.9rem}h2{font-size:1.35rem;margin-bottom:14px}
 .wish.on{color:var(--or);border-color:var(--or)}
 .price{font-weight:800;font-size:1.1rem}.old{color:var(--mut);text-decoration:line-through;font-weight:400;font-size:.9rem;margin-left:6px}
 .stars{color:var(--or);font-size:14px;letter-spacing:1px}.stars small{color:var(--mut);letter-spacing:0;margin-left:4px}
-.stock-ok{color:var(--ok);font-weight:600}.stock-low{color:var(--or-d);font-weight:600}.stock-out{color:var(--err);font-weight:600}
+.stock-ok{color:var(--ok);font-weight:600}.stock-low{color:#a84300;font-weight:600}.stock-out{color:var(--err);font-weight:600}
 
 .shop{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
 .panel{background:var(--wh);border:1px solid var(--line);border-radius:var(--r);padding:16px}
@@ -168,3 +168,86 @@ aside .panel{margin-bottom:14px}aside .panel p{margin:4px 0}
 @media(max-width:520px){.foot-grid{grid-template-columns:1fr}}
 
 .dz{border:1px solid #f0c4c4;background:#fff7f7;border-radius:var(--r);padding:16px}
+
+/* Older browsers (before 2021) do not know aspect-ratio: keep product photos square with a padding fallback. */
+@supports not (aspect-ratio:1){
+  .card .pic,.gallery .main{position:relative;height:0;padding:0 0 100%}
+  .card .pic img,.gallery .main img{position:absolute;top:0;left:0;width:100%;height:100%;padding:14px;box-sizing:border-box}
+  .hero-art{min-height:220px}
+}
+
+/* ===== Responsive hardening (found by testing at 320 to 1920px wide) ===== */
+/* Grid items may shrink: without this a wide product photo or long word stretches the whole page sideways on phones. */
+.grid>*,.shop>*,.pd>*,.two>*,.od>*,.acct>*,.cards2>*,.row2>*,.hero>*,.foot-grid>*{min-width:0}
+.card .name,.cardbox,.oc-names,.irow>div{overflow-wrap:anywhere}
+.grid{grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr))}
+@media(max-width:860px){
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .shop,.pd,.two,.od,.acct,.cards2{grid-template-columns:minmax(0,1fr)}
+  /* iPhones zoom the page when a field is smaller than 16px: keep fields at 16px */
+  input,select,textarea{font-size:16px}
+  main.wrap{padding-top:16px}h1{font-size:1.6rem}
+  .hero h1{font-size:2rem}.hero{padding:28px 18px}
+  .toolbar{align-items:stretch}.toolbar select{width:100%}
+  .pd-actions .btn{flex:1 1 140px}
+  .foot-base{flex-direction:column;align-items:flex-start}
+}
+@media(max-width:380px){
+  .wrap{padding:0 12px}.header-row{gap:8px}.actions{gap:8px;font-size:13px}.logo{font-size:1.35rem}
+  .grid{gap:8px}.card .body{padding:8px}.card .foot{padding:0 8px 8px}.row2{grid-template-columns:minmax(0,1fr)}
+  .cats{grid-template-columns:repeat(2,minmax(0,1fr))}.trust{grid-template-columns:minmax(0,1fr)}
+}
+/* Comfortable touch targets (about 44px) on phones and tablets */
+@media(max-width:860px),(pointer:coarse){
+  .menu-btn{min-width:44px;min-height:44px}
+  .actions a{display:inline-flex;align-items:center;min-height:44px}
+  .search input,.search button{min-height:44px}
+  .btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+  .btn.sm{min-height:40px;padding:8px 14px}
+  .qty button{width:42px;height:42px}
+  .chip{padding:10px 16px}
+  .wish{width:42px;height:42px}
+  .link{padding:12px 0}
+  .footer a{padding:9px 0}
+  .mainnav a,.dd-menu a{padding-top:10px;padding-bottom:10px}
+  .doc summary{padding:8px 0;min-height:44px}
+  .tabs a,.acct-nav a{min-height:44px}
+  .pager button{min-height:44px;min-width:44px}
+  .thumbs button{width:56px;height:56px}
+  a.fpill,.fpill{padding:8px 12px}
+}
+
+/* price and old price wrap onto two lines instead of pushing the card wider */
+.prow{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px}.prow .old{margin-left:0}
+.search{min-width:0}
+@media(max-width:380px){.card .price{font-size:1rem}.pd .price{font-size:1.5rem}}
+
+/* readable orange text (the brand orange on light grey is too faint for small text) */
+.dd-menu a:hover{color:#a84300}
+.sec-head a{display:inline-block;padding:6px 0}
+.logo{display:inline-flex;align-items:center;min-height:44px}
+@media(max-width:860px),(pointer:coarse){
+  .fbrands a{padding:9px 10px;margin:0 4px 0 0}
+  .filters select,.filters input[type=number],.filters input[type=search],.toolbar select,.field input,.field select,.field textarea,.search input{min-height:44px}
+  .card .name{padding:4px 0}
+}
+
+@media(max-width:860px),(pointer:coarse){.sec-head a{padding:12px 0}}
+
+/* ===== tablet layouts and form details (found in screenshot review) ===== */
+.form.wide{margin:0;width:100%}                       /* a centred grid item shrank the checkout form to half width */
+.irow>div{overflow-wrap:break-word;word-break:normal}  /* product names no longer snap in the middle of a word */
+.check input,input[type=radio],input[type=checkbox]{width:20px;height:20px;flex:none;accent-color:var(--or)}
+.check{min-height:36px}
+@media(min-width:701px) and (max-width:860px){            /* tablets in portrait keep two columns instead of one giant column */
+  .shop{grid-template-columns:210px minmax(0,1fr)}.shop .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pd{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .two,.od{grid-template-columns:minmax(0,1fr) 300px}
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:700px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.irow{grid-template-columns:52px minmax(0,1fr)}.irow>b,.irow>a.btn{grid-column:2}.oc-items img,.irow img{width:48px;height:48px}}
+
+/* the filter panel folds away on phones so products appear straight away */
+.fbtn{display:none}.filters input[type=search]{width:100%;padding:9px 10px;border:1px solid #cfcfcf;border-radius:var(--r)}
+@media(max-width:700px){.fbtn{display:inline-flex}.filters{display:none}.filters.open{display:block}.toolbar strong{margin-right:auto}.toolbar select{width:auto;flex:1 1 150px}}
